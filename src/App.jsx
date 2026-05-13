@@ -9,7 +9,11 @@ const formatKr = (n) => {
   return Math.round(n).toLocaleString('sv-SE').replace(/,/g, ' ') + ' kr';
 };
 
-const formatPct = (n) => (n * 100).toFixed(1).replace('.', ',') + ' %';
+const formatPct = (n) => new Intl.NumberFormat('sv-SE', {
+  style: 'percent',
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
+}).format(n);
 
 const clamp = (val, min, max) => {
   let v = val;
