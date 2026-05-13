@@ -51,23 +51,42 @@ const parseInputValue = (str, allowDecimal = false) => {
   return cleaned === '' ? 0 : Number(cleaned);
 };
 
-const NumInput = ({ label, value, onChange, suffix = 'kr', placeholder, hint, min = 0, max, decimals = 0 }) => (
-  <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-    <div className="relative">
-      <input
-        type="text"
-        inputMode={decimals > 0 ? 'decimal' : 'numeric'}
-        value={formatInputValue(value, decimals)}
-        onChange={(e) => onChange(clamp(parseInputValue(e.target.value, decimals > 0), min, max))}
-        placeholder={placeholder || '0'}
-        className="w-full px-3 py-2 pr-12 border border-gray-300 rounded-md focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white text-gray-900"
-      />
-      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">{suffix}</span>
+const NumInput = ({ label, value, onChange, suffix = 'kr', placeholder, hint, min = 0, max, decimals = 0 }) => {
+  const [text, setText] = useState(() => formatInputValue(value, decimals));
+
+  const handleChange = (e) => {
+    const newText = e.target.value;
+    const parsed = parseInputValue(newText, decimals > 0);
+    const clamped = clamp(parsed, min, max);
+    // Behåll exakt det användaren skrivit om värdet är inom intervallet (så "7," kan stå kvar
+    // medan man fortsätter skriva "7,73"). Vid klampning, visa det klampade värdet direkt.
+    setText(parsed === clamped ? newText : formatInputValue(clamped, decimals));
+    onChange(clamped);
+  };
+
+  const handleBlur = () => {
+    setText(formatInputValue(value, decimals));
+  };
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+      <div className="relative">
+        <input
+          type="text"
+          inputMode={decimals > 0 ? 'decimal' : 'numeric'}
+          value={text}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          placeholder={placeholder || '0'}
+          className="w-full px-3 py-2 pr-12 border border-gray-300 rounded-md focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white text-gray-900"
+        />
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">{suffix}</span>
+      </div>
+      {hint && <p className="text-xs text-gray-500 mt-1">{hint}</p>}
     </div>
-    {hint && <p className="text-xs text-gray-500 mt-1">{hint}</p>}
-  </div>
-);
+  );
+};
 
 const TextInput = ({ label, value, onChange, placeholder }) => (
   <div>
