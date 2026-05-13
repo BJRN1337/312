@@ -30,26 +30,36 @@ const InfoBox = ({ title, children }) => (
   </div>
 );
 
-const formatInputValue = (n) => {
+const formatInputValue = (n, decimals = 0) => {
   if (n == null || n === 0 || isNaN(n)) return '';
-  return Math.round(n).toLocaleString('sv-SE').replace(/,/g, ' ');
+  return new Intl.NumberFormat('sv-SE', {
+    useGrouping: true,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: decimals,
+  }).format(n).replace(/ /g, ' ');
 };
 
-const parseInputValue = (str) => {
+const parseInputValue = (str, allowDecimal = false) => {
   if (!str) return 0;
+  if (allowDecimal) {
+    const normalized = str.replace(/\s/g, '').replace(',', '.');
+    const cleaned = normalized.replace(/[^\d.]/g, '');
+    const parsed = Number(cleaned);
+    return isNaN(parsed) ? 0 : parsed;
+  }
   const cleaned = str.replace(/[^\d]/g, '');
   return cleaned === '' ? 0 : Number(cleaned);
 };
 
-const NumInput = ({ label, value, onChange, suffix = 'kr', placeholder, hint, min = 0, max }) => (
+const NumInput = ({ label, value, onChange, suffix = 'kr', placeholder, hint, min = 0, max, decimals = 0 }) => (
   <div>
     <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
     <div className="relative">
       <input
         type="text"
-        inputMode="numeric"
-        value={formatInputValue(value)}
-        onChange={(e) => onChange(clamp(parseInputValue(e.target.value), min, max))}
+        inputMode={decimals > 0 ? 'decimal' : 'numeric'}
+        value={formatInputValue(value, decimals)}
+        onChange={(e) => onChange(clamp(parseInputValue(e.target.value, decimals > 0), min, max))}
         placeholder={placeholder || '0'}
         className="w-full px-3 py-2 pr-12 border border-gray-300 rounded-md focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white text-gray-900"
       />
@@ -119,6 +129,7 @@ const BolagForm = ({ bolag, index, total, onUpdate, onRemove }) => (
         onChange={(v) => onUpdate('ownership', v)}
         suffix="%"
         max={100}
+        decimals={2}
       />
     </div>
 
@@ -143,6 +154,7 @@ const BolagForm = ({ bolag, index, total, onUpdate, onRemove }) => (
             onChange={(v) => onUpdate('spouseOwnership', v)}
             suffix="%"
             max={100}
+            decimals={2}
             hint="Gemensam beräkning av lönebaserat utrymme (ett löneavdrag om 8 IBB) som sedan fördelas på era aktier."
           />
         </div>
